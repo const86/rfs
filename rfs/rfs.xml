@@ -1,0 +1,181 @@
+<?xml version="1.0"?>
+<ipc name="rfs">
+  <!-- Type declarations -->
+  <alias name="x_mode" type="uint32_t"/>
+  <alias name="x_nlink" type="uint32_t"/>
+  <alias name="x_uid" type="uint32_t"/>
+  <alias name="x_gid" type="uint32_t"/>
+  <alias name="x_dev" type="uint64_t"/>
+  <alias name="x_off" type="int64_t"/>
+  <alias name="x_time" type="int64_t"/>
+  <type name="x_stat">
+    <field name="mode" type="x_mode"/>
+    <field name="nlink" type="x_nlink"/>
+    <field name="uid" type="x_uid"/>
+    <field name="gid" type="x_gid"/>
+    <field name="rdev" type="x_dev"/>
+    <field name="size" type="x_off"/>
+    <field name="atime" type="x_time"/>
+    <field name="mtime" type="x_time"/>
+    <field name="ctime" type="x_time"/>
+  </type>
+  <alias name="x_fsblkcnt" type="uint64_t"/>
+  <alias name="x_fsfilcnt" type="uint64_t"/>
+  <type name="x_statfs">
+    <field name="bsize" type="uint32_t"/>
+    <field name="blocks" type="x_fsblkcnt"/>
+    <field name="bfree" type="x_fsblkcnt"/>
+    <field name="bavail" type="x_fsblkcnt"/>
+    <field name="files" type="x_fsfilcnt"/>
+    <field name="ffree" type="x_fsfilcnt"/>
+    <field name="namemax" type="uint32_t"/>
+  </type>
+  <list type="string"/>
+  <type name="x_timespec">
+    <field name="sec" type="uint64_t"/>
+    <field name="nsec" type="uint32_t"/>
+  </type>
+  <func id="0" name="r_set_key">
+    <in name="key" type="uint64_t"/>
+  </func>
+  <!--  getattr -->
+  <func id="1" name="r_getattr">
+    <in name="path" type="string"/>
+    <out name="buf" type="x_stat"/>
+  </func>
+  <!--  readlink -->
+  <func id="2" name="r_readlink">
+    <in name="path" type="string"/>
+    <in name="len" type="uint32_t"/>
+    <out name="buf" type="string"/>
+  </func>
+  <!--  mknod -->
+  <func id="3" name="r_mknod">
+    <in name="path" type="string"/>
+    <in name="mode" type="x_mode"/>
+    <in name="dev" type="x_dev"/>
+  </func>
+  <!--  mkdir -->
+  <func id="4" name="r_mkdir">
+    <in name="path" type="string"/>
+    <in name="mode" type="x_mode"/>
+  </func>
+  <!--  unlink -->
+  <func id="5" name="r_unlink">
+    <in name="path" type="string"/>
+  </func>
+  <!--  rmdir -->
+  <func id="6" name="r_rmdir">
+    <in name="path" type="string"/>
+  </func>
+  <!--  symlink -->
+  <func id="7" name="r_symlink">
+    <in name="oldpath" type="string"/>
+    <in name="newpath" type="string"/>
+  </func>
+  <!--  rename -->
+  <func id="8" name="r_rename">
+    <in name="oldpath" type="string"/>
+    <in name="newpath" type="string"/>
+  </func>
+  <!--  link -->
+  <func id="9" name="r_link">
+    <in name="oldpath" type="string"/>
+    <in name="newpath" type="string"/>
+  </func>
+  <!-- chmod -->
+  <func id="10" name="r_chmod">
+    <in name="path" type="string"/>
+    <in name="mode" type="x_mode"/>
+  </func>
+  <!-- chown -->
+  <func id="11" name="r_chown">
+    <in name="path" type="string"/>
+    <in name="owner" type="x_uid"/>
+    <in name="group" type="x_gid"/>
+  </func>
+  <!-- truncate -->
+  <func id="12" name="r_truncate">
+    <in name="path" type="string"/>
+    <in name="length" type="x_off"/>
+  </func>
+  <!-- open -->
+  <func id="13" name="r_open">
+    <in name="path" type="string"/>
+    <in name="flags" type="int32_t"/>
+    <in name="mode" type="x_mode"/>
+    <out name="key" type="uint64_t"/>
+  </func>
+  <!-- read -->
+  <func id="14" name="r_read">
+    <in name="key" type="uint64_t"/>
+    <in name="size" type="uint32_t"/>
+    <in name="offset" type="x_off"/>
+    <out name="buf" type="datum"/>
+  </func>
+  <!-- write -->
+  <func id="15" name="r_write">
+    <in name="key" type="uint64_t"/>
+    <in name="offset" type="x_off"/>
+    <in name="data" type="datum"/>
+    <out name="done" type="uint32_t"/>
+  </func>
+  <!-- statfs -->
+  <func id="16" name="r_statfs">
+    <in name="path" type="string"/>
+    <out name="buf" type="x_statfs"/>
+  </func>
+  <!-- flush -->
+  <!-- release -->
+  <func id="17" name="r_release">
+    <in name="key" type="uint64_t"/>
+  </func>
+  <!-- fsync -->
+  <func id="18" name="r_fsync">
+    <in name="key" type="uint64_t"/>
+  </func>
+  <func id="19" name="r_fdatasync">
+    <in name="key" type="uint64_t"/>
+  </func>
+  <!-- setxattr -->
+  <!-- getxattr -->
+  <!-- listxattr -->
+  <!-- removexattr -->
+  <!-- opendir -->
+  <func id="20" name="r_opendir">
+    <in name="path" type="string"/>
+    <out name="key" type="uint64_t"/>
+  </func>
+  <!-- readdir -->
+  <func id="21" name="r_readdir">
+    <in name="key" type="uint64_t"/>
+    <out name="names" type="list_string"/>
+  </func>
+  <!-- releasedir -->
+  <func id="22" name="r_releasedir">
+    <in name="key" type="uint64_t"/>
+  </func>
+  <!-- fsyncdir -->
+  <!-- access -->
+  <func id="23" name="r_access">
+    <in name="path" type="string"/>
+    <in name="mode" type="int32_t"/>
+  </func>
+  <!-- ftruncate -->
+  <func id="24" name="r_ftruncate">
+    <in name="key" type="uint64_t"/>
+    <in name="length" type="x_off"/>
+  </func>
+  <!-- fgetattr -->
+  <func id="25" name="r_fgetattr">
+    <in name="key" type="uint64_t"/>
+    <out name="buf" type="x_stat"/>
+  </func>
+  <!-- lock -->
+  <!-- utimens -->
+  <func id="26" name="r_utimens">
+    <in name="path"  type="string"/>
+    <in name="atime" type="x_timespec"/>
+    <in name="mtime" type="x_timespec"/>
+  </func>
+</ipc>
