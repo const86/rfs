@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <netdb.h>
+#include <netinet/tcp.h>
 #include <signal.h>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -77,10 +78,21 @@ static int setup_socket(const char *nodename, const char *servname)
 		if (sock == -1)
 			continue;
 
+		int keepalive = 1;
+		if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE,
+				&keepalive, sizeof(keepalive)) == -1)
+			goto fail;
+
+		int tcp_nodelay = 1;
+		if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
+				&tcp_nodelay, sizeof(tcp_nodelay)) == -1)
+			goto fail;
+
 		if (bind(sock, p->ai_addr, p->ai_addrlen) == 0 &&
 			listen(sock, 1) == 0)
 			break;
 
+	fail:
 		close(sock);
 		sock = -1;
 	}
