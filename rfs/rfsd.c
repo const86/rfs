@@ -28,11 +28,21 @@ static int session(int sock)
 	return 0;
 }
 
+static bool set_term_sigs(void (*handler)(int))
+{
+	struct sigaction sa = {.sa_handler = handler};
+
+	sigemptyset(&sa.sa_mask);
+	sigaddset(&sa.sa_mask, SIGINT);
+	sigaddset(&sa.sa_mask, SIGTERM);
+
+	return sigaction(SIGINT, &sa, NULL) == 0 &&
+		sigaction(SIGTERM, &sa, NULL) == 0;
+}
+
 static void rfsd_shutdown(int sig)
 {
-	(void)sig;
-
-	kill(0, SIGTERM);
+	kill(0, sig);
 	_exit(0);
 }
 
@@ -40,6 +50,7 @@ static void rfsd_exit_one(int sig)
 {
 	(void)sig;
 
+	set_term_sigs(SIG_IGN);
 	should_stop = 1;
 
 	const struct itimerval delay = {
@@ -76,18 +87,6 @@ static int setup_socket(const char *nodename, const char *servname)
 
 	freeaddrinfo(list);
 	return sock;
-}
-
-static bool set_term_sigs(void (*handler)(int))
-{
-	struct sigaction sa = {.sa_handler = handler};
-
-	sigemptyset(&sa.sa_mask);
-	sigaddset(&sa.sa_mask, SIGINT);
-	sigaddset(&sa.sa_mask, SIGTERM);
-
-	return sigaction(SIGINT, &sa, NULL) == 0 &&
-		sigaction(SIGTERM, &sa, NULL) == 0;
 }
 
 int main(int argc, char **argv)
