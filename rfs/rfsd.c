@@ -95,7 +95,8 @@ int main(int argc, char **argv)
 	if (argc != 3)
 		return 1;
 
-	if (setpgrp() == -1 || !set_term_sigs(rfsd_shutdown) ||
+	setpgrp();
+	if (!set_term_sigs(rfsd_shutdown) ||
 		sigignore(SIGCHLD) != 0)
 		return 2;
 
