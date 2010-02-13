@@ -55,7 +55,7 @@ static void rfsd_exit_one(int sig)
 	should_stop = 1;
 
 	const struct itimerval delay = {
-		.it_interval = {1, 0},
+		.it_value = {1, 0},
 	};
 	if (setitimer(ITIMER_REAL, &delay, NULL) == -1)
 		_exit(0);
