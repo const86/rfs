@@ -7,6 +7,7 @@
 #include <signal.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include <io_file.h>
@@ -44,7 +45,12 @@ static bool set_term_sigs(void (*handler)(int))
 static void rfsd_shutdown(int sig)
 {
 	kill(0, sig);
+
+	while (wait(NULL) != -1 || errno != ECHILD)
+		;
+
 	_exit(0);
+
 }
 
 static void rfsd_exit_one(int sig)
@@ -139,6 +145,7 @@ int main(int argc, char **argv)
 		close(rsock);
 		sigprocmask(SIG_SETMASK, &oldmask, NULL);
 	}
+
 	close(sock);
 	return 0;
 }
