@@ -4,6 +4,7 @@
 #include <inttypes.h>
 #include <netdb.h>
 #include <netinet/tcp.h>
+#include <setjmp.h>
 #include <signal.h>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -15,6 +16,7 @@
 
 static struct ipc ipc;
 static sig_atomic_t should_stop;
+static sigjmp_buf exit_env;
 
 static int session(int sock)
 {
@@ -30,7 +32,7 @@ static int session(int sock)
 	return 0;
 }
 
-static bool set_term_sigs(void (*handler)(int))
+static void set_term_sigs(void (*handler)(int))
 {
 	struct sigaction sa = {.sa_handler = handler};
 
@@ -38,19 +40,14 @@ static bool set_term_sigs(void (*handler)(int))
 	sigaddset(&sa.sa_mask, SIGINT);
 	sigaddset(&sa.sa_mask, SIGTERM);
 
-	return sigaction(SIGINT, &sa, NULL) == 0 &&
-		sigaction(SIGTERM, &sa, NULL) == 0;
+	sigaction(SIGINT, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
 }
 
 static void rfsd_shutdown(int sig)
 {
 	kill(0, sig);
-
-	while (wait(NULL) != -1 || errno != ECHILD)
-		;
-
-	_exit(0);
-
+	siglongjmp(exit_env, 1);
 }
 
 static void rfsd_exit_one(int sig)
@@ -107,20 +104,8 @@ static int setup_socket(const char *nodename, const char *servname)
 	return sock;
 }
 
-int main(int argc, char **argv)
+static int main_loop(int sock)
 {
-	if (argc != 3)
-		return 1;
-
-	setpgrp();
-	if (!set_term_sigs(rfsd_shutdown) ||
-		sigignore(SIGCHLD) != 0)
-		return 2;
-
-	int sock = setup_socket(argv[1], argv[2]);
-	if (sock == -1)
-		return 3;
-
 	sigset_t allsig;
 	sigfillset(&allsig);
 
@@ -135,10 +120,9 @@ int main(int argc, char **argv)
 		if (fork() == 0) {
 			close(sock);
 
-			if (!set_term_sigs(rfsd_exit_one))
-				return 4;
-
+			set_term_sigs(rfsd_exit_one);
 			sigprocmask(SIG_SETMASK, &oldmask, NULL);
+
 			return session(rsock);
 		}
 
@@ -146,6 +130,29 @@ int main(int argc, char **argv)
 		sigprocmask(SIG_SETMASK, &oldmask, NULL);
 	}
 
+	return 0;
+}
+
+int main(int argc, char **argv)
+{
+	if (argc != 3)
+		return 1;
+
+	setpgrp();
+	set_term_sigs(rfsd_shutdown);
+	sigignore(SIGCHLD);
+
+	int sock = setup_socket(argv[1], argv[2]);
+	if (sock == -1)
+		return 3;
+
+	if (!sigsetjmp(exit_env, 0))
+		return main_loop(sock);
+
 	close(sock);
+
+	while (wait(NULL) != -1 || errno != ECHILD)
+		;
+
 	return 0;
 }
